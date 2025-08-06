@@ -1,0 +1,22 @@
+{
+  "name": "ufgfans-backend",
+  "version": "1.0.0",
+  "description": "Micro-servicio de MFA TOTP para UFGFans",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.0.0",
+    "firebase-admin": "^11.11.0",
+    "qrcode": "^1.5.2",
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
