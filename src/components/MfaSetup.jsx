@@ -4,8 +4,6 @@ import api from '../api';
 import { auth } from '../firebase';
 import { signInWithCustomToken, signOut } from 'firebase/auth';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-
 export default function MfaSetup({ user, onComplete }) {
   const [qr, setQr] = useState(null);
   const [token, setToken] = useState('');
@@ -16,14 +14,18 @@ export default function MfaSetup({ user, onComplete }) {
     // Al montar, solicitar QR si no existe.
     const fetchQr = async () => {
       try {
+        console.log('Fetching QR for user:', user.uid, user.email);
         const { data } = await api.post(`/mfa/generate`, {
           uid: user.uid,
           email: user.email,
         });
+        console.log('QR response:', data);
         setQr(data.qrDataURL);
       } catch (err) {
-        console.error(err);
-        setError('Error generando QR');
+        console.error('QR generation error:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        setError(`Error generando QR: ${err.response?.data?.error || err.message}`);
       }
     };
     fetchQr();

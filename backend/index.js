@@ -6,6 +6,10 @@ import QRCode from 'qrcode';
 import admin from 'firebase-admin';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cargar credenciales del service account.
 // 1. Permitir variable de entorno GOOGLE_APPLICATION_CREDENTIALS.
@@ -39,8 +43,16 @@ admin.initializeApp({
 const db = admin.firestore();
 const app = express();
 
-// CORS: permitir origen del frontend (Vite)
-app.use(cors({ origin: 'http://localhost:5173' }));
+// CORS: permitir origen del frontend (development y production)
+const allowedOrigins = [
+  'http://localhost:5173', // Vite dev server
+  process.env.RAILWAY_STATIC_URL, // Railway production URL
+  process.env.RAILWAY_PUBLIC_DOMAIN // Custom domain if configured
+].filter(Boolean);
+
+app.use(cors({ 
+  origin: process.env.NODE_ENV === 'production' ? allowedOrigins : 'http://localhost:5173'
+}));
 
 app.use(express.json());
 
@@ -140,5 +152,20 @@ app.get('/secure/hello', (req, res) => {
   res.json({ message: `Hola ${req.user.uid}, acceso concedido!` });
 });
 
+// Servir archivos estáticos del frontend (solo en producción)
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = path.join(__dirname, '../dist');
+  app.use(express.static(frontendPath));
+  
+  // Catch-all handler: enviar index.html para rutas del frontend
+  app.get('*', (req, res) => {
+    // No interceptar rutas de la API
+    if (req.path.startsWith('/mfa') || req.path.startsWith('/secure')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`🔥 Backend MFA corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🔥 Backend MFA corriendo en`, PORT));
